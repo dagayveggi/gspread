@@ -6,6 +6,8 @@ API Reference
 Top level
 ---------
 
+.. autofunction:: oauth
+.. autofunction:: service_account
 .. autofunction:: authorize
 
 Client
@@ -17,12 +19,12 @@ Client
 Models
 ------
 
-The models represent common spreadsheet objects: :class:`a spreadsheet <Spreadsheet>`,
-:class:`a worksheet <Worksheet>` and :class:`a cell <Cell>`.
+The models represent common spreadsheet entities: :class:`a spreadsheet <gspread.models.Spreadsheet>`,
+:class:`a worksheet <gspread.models.Worksheet>` and :class:`a cell <gspread.models.Cell>`.
 
 .. note::
 
-   The classes described below should not be instantiated by end-user. Their
+   The classes described below should not be instantiated by the end-user. Their
    instances result from calling other objects' methods.
 
 .. autoclass:: gspread.models.Spreadsheet
@@ -36,7 +38,15 @@ Utils
 -----
 
 .. automodule:: gspread.utils
-   :members: rowcol_to_a1, a1_to_rowcol
+   :members: rowcol_to_a1, a1_to_rowcol, a1_range_to_grid_range,
+             cast_to_a1_notation, absolute_range_name, is_scalar,
+             filter_dict_values, accepted_kwargs
+
+Auth
+----
+
+.. automodule:: gspread.auth
+   :members: local_server_flow, console_flow
 
 Exceptions
 ----------

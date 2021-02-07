@@ -6,9 +6,10 @@ gspread
 Features:
 
 -  Google Sheets API v4.
--  Open a spreadsheet by its **title** or **url**.
--  Extract range, entire row or column values.
--  Python 3 support.
+-  Open a spreadsheet by title, key or url.
+-  Read, write, and format cell ranges.
+-  Sharing and access control.
+-  Batching updates.
 
 
 Installation
@@ -22,30 +23,30 @@ Installation
 Requirements: Python 2.7+ or Python 3+.
 
 
-Example Usage
+Quick Example
 -------------
-
-1. `Obtain OAuth2 credentials from Google Developers Console`_
-
-2. Get a cell range from a spreadsheet:
 
 .. code:: python
 
    import gspread
 
-   gc = gspread.authorize(credentials)
+   gc = gspread.service_account()
 
-   # Open a worksheet from spreadsheet with one shot
+   # Open a sheet from a spreadsheet in one go
    wks = gc.open("Where is the money Lebowski?").sheet1
 
-   wks.update_acell('B2', "it's down there somewhere, let me take another look.")
+   # Update a range of cells using the top left corner address
+   wks.update('A1', [[1, 2], [3, 4]])
 
-   # Fetch a cell range
-   cell_list = wks.range('A1:B7')
+   # Or update a single cell
+   wks.update('B42', "it's down there somewhere, let me take another look.")
+
+   # Format the header
+   wks.format('A1:B1', {'textFormat': {'bold': True}})
 
 
-Authentication
---------------
+Getting Started
+---------------
 
 .. toctree::
    :maxdepth: 2
@@ -53,13 +54,21 @@ Authentication
    oauth2
 
 
-More Examples
--------------
+Usage
+-----
 
 .. toctree::
     :maxdepth: 2
 
     user-guide
+
+Advanced
+--------
+
+.. toctree::
+    :maxdepth: 2
+
+    advanced
 
 
 API Documentation
