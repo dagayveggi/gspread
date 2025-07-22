@@ -12,6 +12,12 @@ You can open a spreadsheet by its title as it appears in Google Docs:
 .. code:: python
 
    sh = gc.open('My poor gym results')
+   
+.. NOTE::
+    If you have multiple Google Sheets with the same title, only the latest sheet will be 
+    opened by this method without throwing an error. It's recommended to open the sheet
+    using its unique ID instead (see below)
+      
 
 If you want to be specific, use a key (which can be extracted from
 the spreadsheet's url):
@@ -88,7 +94,7 @@ Creating a Worksheet
 
 .. code:: python
 
-   worksheet = sh.add_worksheet(title="A worksheet", rows="100", cols="20")
+   worksheet = sh.add_worksheet(title="A worksheet", rows=100, cols=20)
 
 
 Deleting a Worksheet
@@ -97,6 +103,15 @@ Deleting a Worksheet
 .. code:: python
 
    sh.del_worksheet(worksheet)
+
+
+Updating a Worksheet's name and color
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code:: python
+
+   worksheet.update_title("December Transactions")
+   worksheet.update_tab_color({"red": 1, "green": 0.5, "blue": 0.5})
 
 
 Getting a Cell Value
@@ -123,6 +138,42 @@ If you want to get a cell formula:
    # or
 
    cell = worksheet.cell(1, 2, value_render_option='FORMULA').value
+
+Getting Unformatted Cell Value
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Get the Unformatted value from a cell.
+Example: cells formatted as currency will display with the selected
+currency but they actual value is regular number.
+
+Get the formatted (as displayed) value:
+
+.. code:: python
+
+   worksheet.get("A1:B2")
+
+Results in: ``[['$12.00']]``
+
+Get the unformatted value:
+
+.. code:: python
+
+   from gspread.utils import ValueRenderOption
+   worksheet.get("A1:B2", value_render_option=ValueRenderOption.unformatted)
+
+Results in: ``[[12]]``
+
+Getting Cell formula
+~~~~~~~~~~~~~~~~~~~~
+
+Get the formula from a cell instead of the resulting value:
+
+.. code:: python
+
+   from gspread.utils import ValueRenderOption
+   worksheet.get("G6", value_render_option=ValueRenderOption.formula)
+
+Resulsts in: ``[['=1/1024']]``
 
 
 Getting All Values From a Row or a Column
@@ -153,7 +204,7 @@ Get all values from the first column:
     data in one go.
 
     What's more, Sheets API v4 introduced `Usage Limits <https://developers.google.com/sheets/api/limits>`_
-    (as of this writing, 500 requests per 100 seconds per project, and 100 requests per 100 seconds per user). When your
+    (as of this writing, 300 requests per 60 seconds per project, and 60 requests per 60 seconds per user). When your
     application hits that limit, you get an :exc:`~gspread.exceptions.APIError` `429 RESOURCE_EXHAUSTED`.
 
     Here are the methods that may help you to reduce API calls:
@@ -199,6 +250,7 @@ Find a cell matching a regular expression
    amount_re = re.compile(r'(Big|Enormous) dough')
    cell = worksheet.find(amount_re)
 
+`find` returns `None` if value is not Found
 
 Finding All Matched Cells
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -215,6 +267,21 @@ Find all cells matching a regexp:
 
    criteria_re = re.compile(r'(Small|Room-tiering) rug')
    cell_list = worksheet.findall(criteria_re)
+
+Clear A Worksheet
+~~~~~~~~~~~~~~~~~
+
+Clear one or multiple cells ranges at once:
+
+.. code:: python
+
+   worksheet.batch_clear(["A1:B1", "C2:E2", "my_named_range"])
+
+Clear the entire worksheet:
+
+.. code:: python
+
+   worksheet.clear()
 
 Cell Object
 ~~~~~~~~~~~
@@ -235,7 +302,7 @@ Using `A1 notation <https://developers.google.com/sheets/api/guides/concepts#a1_
 
 .. code:: python
 
-   worksheet.update('B1', 'Bingo!')
+   worksheet.update_acell('B1', 'Bingo!')
 
 Or row and column coordinates:
 
@@ -247,7 +314,111 @@ Update a range
 
 .. code:: python
 
-   worksheet.update('A1:B2', [[1, 2], [3, 4]])
+   worksheet.update([[1, 2], [3, 4]], 'A1:B2')
+
+
+Adding Data Validation
+~~~~~~~~~~~~~~~~~~~~~~
+
+You can add a strict validation to a cell.
+
+.. code:: python
+
+   ws.add_validation(
+      'A1',
+      ValidationConditionType.number_greater,
+      [10],
+      strict=True,
+      inputMessage='Value must be greater than 10',
+   )
+ 
+
+Or add validation with a drop down.
+
+.. code:: python
+   
+   worksheet.add_validation(
+      'C2:C7',
+      ValidationConditionType.one_of_list,
+      ['Yes',
+      'No',]
+      showCustomUi=True
+   )
+
+
+Check out the api docs for `DataValidationRule`_ and `CondtionType`_ for more details.
+
+.. _CondtionType: https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/other#ConditionType
+
+.. _DataValidationRule: https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/cells#DataValidationRule
+
+Extract table
+~~~~~~~~~~~~~
+
+Gspread provides a function to extract a data table.
+A data table is defined as a rectangular table that stops either on the **first empty** cell or
+the **enge of the sheet**.
+
+You can extract table from any address by providing the top left corner of the desired table.
+
+Gspread provides 3 directions for searching the end of the table:
+
+   * :attr:`~gspread.utils.TableDirection.right`: extract a single row searching on the right of the starting cell
+   * :attr:`~gspread.utils.TableDirection.down`: extract a single column searching on the bottom of the starting cell
+   * :attr:`~gspread.utils.TableDirection.table`: extract a rectangular table by first searching right from starting cell,
+     then searching down from starting cell.
+
+      .. note::
+
+        Gspread will not look for empty cell inside the table. it only look at the top row and first column.
+
+Example extracting a table from the below sample sheet:
+
+.. list-table:: Find table
+   :header-rows: 1
+
+   * - ID
+     - Name
+     - Universe
+     - Super power
+   * - 1
+     - Batman
+     - DC
+     - Very rich
+   * - 2
+     - DeadPool
+     - Marvel
+     - self healing
+   * - 3
+     - Superman
+     - DC
+     - super human
+   * -
+     - \-
+     - \-
+     - \-
+   * - 5
+     - Lavigne958
+     -
+     - maintains Gspread
+   * - 6
+     - Alifee
+     -
+     - maintains Gspread
+
+Using the below code will result in rows 2 to 4:
+
+.. code:: python
+
+   worksheet.expand("A2")
+
+   [
+      ["Batman", "DC", "Very rich"],
+      ["DeadPool", "Marvel", "self healing"],
+      ["Superman", "DC", "super human"],
+   ]
+
+
 
 Formatting
 ~~~~~~~~~~
@@ -285,7 +456,7 @@ Color the background of **A2:B2** cell range in black, change horizontal alignme
 The second argument to :meth:`~gspread.models.Worksheet.format` is a dictionary containing the fields to update. A full specification of format options is available at `CellFormat <https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/cells#cellformat>`_ in Sheet API Reference.
 
 .. Tip::
-    `gspread-formatting <https://github.com/robin900/gspread-formatting>`_ offers extensive functionality to help you when you go beyond basics.
+    for more complex formatting see :ref:`gspread-formating-label`.
 
 
 Using gspread with pandas
@@ -307,10 +478,7 @@ Here's a basic example for writing a dataframe to a sheet. With :meth:`~gspread.
 
    worksheet.update([dataframe.columns.values.tolist()] + dataframe.values.tolist())
 
-For advanced pandas use cases check out these libraries:
-
- * `gspread-pandas <https://github.com/aiguofer/gspread-pandas>`_
- * `gspread-dataframe <https://github.com/robin900/gspread-dataframe>`_
+For advanced pandas use cases check out community section :ref:`gspread-pandas-label`
 
 Using gspread with NumPy
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -324,7 +492,7 @@ Read contents of a sheet into a NumPy array:
    import numpy as np
    array = np.array(worksheet.get_all_values())
 
-The code above assumes that your data starts from the first row of the sheet. If you have a hearder row in the first row, you need replace ``worksheet.get_all_values()`` with ``worksheet.get_all_values()[1:]``.
+The code above assumes that your data starts from the first row of the sheet. If you have a header row in the first row, you need replace ``worksheet.get_all_values()`` with ``worksheet.get_all_values()[1:]``.
 
 Write a NumPy array to a sheet:
 
@@ -335,5 +503,5 @@ Write a NumPy array to a sheet:
    array = np.array([[1, 2, 3], [4, 5, 6]])
 
    # Write the array to worksheet starting from the A2 cell
-   worksheet.update('A2', array.tolist())
+   worksheet.update(array.tolist(), 'A2')
 

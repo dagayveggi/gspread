@@ -1,5 +1,6 @@
-nose
-google-auth
-google-auth-oauthlib>=0.4.1
-betamax==0.8.1
--e git+https://github.com/burnash/betamax-json-body-serializer.git#egg=betamax_json_body_serializer
+google-auth==1.12.0
+google-auth-oauthlib==0.4.1
+vcrpy
+pytest
+pytest-vcr
+urllib3==1.26.15

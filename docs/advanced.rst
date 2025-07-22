@@ -13,9 +13,10 @@ If you familiar with the Jupyter Notebook, `Google Colaboratory <https://colab.r
     auth.authenticate_user()
 
     import gspread
-    from oauth2client.client import GoogleCredentials
+    from google.auth import default
+    creds, _ = default()
 
-    gc = gspread.authorize(GoogleCredentials.get_application_default())
+    gc = gspread.authorize(creds)
 
 See the full example in the `External data: Local Files, Drive, Sheets, and Cloud Storage <https://colab.research.google.com/notebooks/io.ipynb#scrollTo=sOm9PFrT8mGG>`_ notebook.
 
@@ -46,7 +47,7 @@ Using ``Authlib`` instead of ``google-auth``. Similar to `google.auth.transport.
         claims = {'scope': ' '.join(scopes)}
         return AssertionSession(
             grant_type=AssertionSession.JWT_BEARER_GRANT_TYPE,
-            token_url=token_url,
+            token_endpoint=token_url,
             issuer=issuer,
             audience=token_url,
             claims=claims,
